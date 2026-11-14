@@ -120,8 +120,14 @@ function validate(d){
   if(!d.activity)return 'Choose an Activity';
   if(!d.channel)return 'Pilih Channel';
   if(!d.outlet)return 'Isi Nama Outlet';
+  if(!d.address)return 'Isi Alamat';
   if(!d.gps)return 'Check-in GPS dulu';
+  if(!d.pic)return 'Isi Nama PIC';
+  if(!d.picRole)return 'Isi Jabatan PIC';
+  if(!d.picPhone)return 'Isi No. HP PIC';
   if(!d.photoDisplay)return 'Foto Display wajib';
+  if(!d.photoComp)return 'Foto Kompetitor wajib';
+  if(!d.notes)return 'Isi Catatan';
   return null;
 }
 function waText(d){

@@ -116,7 +116,7 @@ textarea{min-height:70px;resize:vertical}
   <div class="card">
     <label class="l">Nama Outlet <span class="req">*</span></label>
     <input type="text" id="outlet" placeholder="cth. Fitness One Kendari">
-    <label class="l">Alamat</label>
+    <label class="l">Alamat <span class="req">*</span></label>
     <textarea id="address" placeholder="Alamat outlet"></textarea>
     <div style="margin-top:12px"><button class="btn ghost" id="gpsBtn" type="button">📍 Check-in GPS</button></div>
     <div class="gps" id="gpsTxt">Belum check-in</div>
@@ -124,11 +124,11 @@ textarea{min-height:70px;resize:vertical}
 
   <div class="sec">PIC Outlet</div>
   <div class="card">
-    <label class="l">Nama PIC</label>
+    <label class="l">Nama PIC <span class="req">*</span></label>
     <input type="text" id="pic" placeholder="Nama contact person">
-    <label class="l">Jabatan</label>
+    <label class="l">Jabatan <span class="req">*</span></label>
     <input type="text" id="picRole" placeholder="cth. Manager, Owner, F&amp;B, Purchasing">
-    <label class="l">No. HP PIC</label>
+    <label class="l">No. HP PIC <span class="req">*</span></label>
     <input type="tel" id="picPhone" placeholder="08xxxxxxxxxx" inputmode="tel">
   </div>
 
@@ -142,14 +142,14 @@ textarea{min-height:70px;resize:vertical}
   <div class="card">
     <div class="ph">
       <div class="phbox" id="ph-display" data-k="display">📷<br>Foto Display <span style="color:var(--danger)">*</span><span class="x">✕</span></div>
-      <div class="phbox" id="ph-comp" data-k="comp">📷<br>Foto Kompetitor<br>(opsional)<span class="x">✕</span></div>
+      <div class="phbox" id="ph-comp" data-k="comp">📷<br>Foto Kompetitor <span style="color:var(--danger)">*</span><span class="x">✕</span></div>
     </div>
     <input type="file" id="file" accept="image/*" capture="environment" class="hidden">
   </div>
 
   <div class="sec">Catatan</div>
   <div class="card">
-    <label class="l">Catatan</label>
+    <label class="l">Catatan <span class="req">*</span></label>
     <textarea id="notes" placeholder="Potensi order, kebutuhan outlet, follow up…"></textarea>
   </div>
 </div>
