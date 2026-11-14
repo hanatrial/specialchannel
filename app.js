@@ -225,7 +225,7 @@ function sumBy(rows,key){
   return [...m].sort((a,b)=>b[1].net-a[1].net);
 }
 function renderMon(){
-  const M=window.MONITORING;
+  const M=MON||window.MONITORING;
   if(!M||!M.rows.length){$('mTx').innerHTML='<div class="empty">Belum ada data</div>';return;}
   const fmtD=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
   $('mPeriod').textContent=`Sektor 60 · ${fmtD(M.from)} – ${fmtD(M.to)}`;
@@ -249,7 +249,104 @@ function renderMon(){
     <div class="m">${fmtD(t.d)} · ${t.n} item</div>
     ${t.rows.map(r=>`<div class="m">• ${esc(r.item)} — ${r.qty} pcs · ${rp(r.net)}</div>`).join('')}
   </div>`).join('');
+  showUpStatus();
   $('mNote').textContent=`Sumber: ${M.source}. Hanya Sektor Market 60 (SPEC. OUTLET RETAIL) dan item yang ada di list item (dicocokkan lewat kode barang). Netto = setelah diskon.`;
+}
+
+// ── monitoring upload: read sales Excel in the browser, keep Sektor 60 + list items, share via Firestore ──
+let MON=null; // latest uploaded data from Firestore (falls back to monitoring-data.js)
+const MON_DOC=()=>db.collection('special_channel_monitoring').doc('latest');
+function loadScript(src){return new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('Gagal memuat '+src));document.head.appendChild(s);});}
+const LIB_ZIP='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+const LIB_XLSX='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+const NEED=['Sektor Market','Kode Barang Principal','Nama Barang','Nama Customer','Nomor Faktur','Tgl Faktur','Qty Kecil','Netto'];
+
+function normDate(v){
+  if(v==null||v==='')return '';
+  if(typeof v==='number'||/^\d+(\.\d+)?$/.test(v)){const d=new Date(Math.round((+v-25569)*864e5));return d.toISOString().slice(0,10);} // Excel serial
+  const s=String(v);const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[0];
+  const m2=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);if(m2)return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
+  return s.slice(0,10);
+}
+// A pivot-only workbook still carries every raw row in its pivot cache — rebuild them from there.
+async function rowsFromPivotCache(buf){
+  await loadScript(LIB_ZIP);
+  const zip=await JSZip.loadAsync(buf);
+  const defs=Object.keys(zip.files).filter(f=>/^xl\/pivotCache\/pivotCacheDefinition\d+\.xml$/.test(f));
+  const P=new DOMParser();
+  for(const defPath of defs){
+    const recPath=defPath.replace('Definition','Records');if(!zip.files[recPath])continue;
+    const def=P.parseFromString(await zip.file(defPath).async('string'),'application/xml');
+    const fields=[...def.getElementsByTagName('cacheField')];
+    const names=fields.map(f=>f.getAttribute('name'));
+    if(!NEED.every(n=>names.includes(n)))continue;
+    const shared=fields.map(f=>{const si=f.getElementsByTagName('sharedItems')[0];return si?[...si.children].map(c=>c.getAttribute('v')):[];});
+    const rec=P.parseFromString(await zip.file(recPath).async('string'),'application/xml');
+    const out=[];
+    for(const r of rec.getElementsByTagName('r')){
+      const o={};let i=0;
+      for(const c of r.children){const n=names[i];o[n]=c.localName==='x'?shared[i][+c.getAttribute('v')]:c.localName==='m'?'':c.getAttribute('v');i++;}
+      out.push(o);
+    }
+    return out;
+  }
+  return null;
+}
+// Plain export: find the sheet/row holding the headers.
+async function rowsFromSheets(buf){
+  await loadScript(LIB_XLSX);
+  const wb=XLSX.read(buf,{type:'array',cellDates:false});
+  for(const name of wb.SheetNames){
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''});
+    const h=aoa.findIndex(r=>NEED.every(n=>r.includes(n)));
+    if(h<0)continue;
+    const head=aoa[h];
+    return aoa.slice(h+1).map(r=>Object.fromEntries(head.map((k,i)=>[k,r[i]])));
+  }
+  return null;
+}
+function pickMonitoring(raw,source){
+  const codes=new Set(window.ITEMS.map(p=>p.code));
+  const strip=s=>String(s??'').replace(/^\S+\s+\((.*)\)$/,'$1').trim();
+  const rows=raw.filter(r=>/^60\b/.test(String(r['Sektor Market']).trim())&&codes.has(String(r['Kode Barang Principal']).trim()))
+    .map(r=>({d:normDate(r['Tgl Faktur']),inv:String(r['Nomor Faktur']),outlet:String(r['Nama Customer']).trim(),kec:strip(r['Kecamatan']),
+      code:String(r['Kode Barang Principal']).trim(),item:String(r['Nama Barang']).trim(),qty:Number(r['Qty Kecil'])||0,net:Math.round(Number(r['Netto'])||0)}));
+  const dates=raw.map(r=>normDate(r['Tgl Faktur'])).filter(Boolean).sort();
+  return {source,from:dates[0]||'',to:dates[dates.length-1]||'',totalRows:raw.length,rows};
+}
+function showUpStatus(){
+  const M=MON||window.MONITORING;if(!M)return;
+  const at=M.uploadedAt?.toDate?M.uploadedAt.toDate():null;
+  $('upStatus').innerHTML=`Data sekarang: <b>${esc(M.source)}</b>${at?' · diupload '+at.toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}`;
+  $('upStatus').className='gps';
+}
+$('upBtn').onclick=()=>{$('upFile').value='';$('upFile').click();};
+$('upFile').onchange=async()=>{
+  const f=$('upFile').files[0];if(!f)return;
+  const st=$('upStatus');st.className='gps';st.textContent='Membaca file…';$('upBtn').disabled=true;
+  try{
+    const buf=await f.arrayBuffer();
+    let raw=null;
+    if(/\.xls[xm]$/i.test(f.name))raw=await rowsFromPivotCache(buf);
+    if(!raw)raw=await rowsFromSheets(buf);
+    if(!raw)throw new Error('Kolom tidak ditemukan. File harus punya kolom: '+NEED.join(', '));
+    const M=pickMonitoring(raw,f.name);
+    if(!M.rows.length)throw new Error(`File terbaca (${raw.length} baris), tapi tidak ada transaksi Sektor 60 dengan item dari list.`);
+    if(!db)throw new Error('Database tidak tersambung');
+    st.textContent='Menyimpan…';
+    const p=MON_DOC().set({...M,uploadedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await Promise.race([p,new Promise(r=>setTimeout(r,8000))]);
+    MON={...M,uploadedAt:{toDate:()=>new Date()}};
+    renderMon();
+    toast(`✅ ${M.rows.length} transaksi Sektor 60 dimuat`);
+  }catch(e){console.error(e);st.textContent='❌ '+(e.message||e);st.className='gps';st.style.color='var(--danger)';$('upBtn').disabled=false;return;}
+  st.style.color='';$('upBtn').disabled=false;
+};
+let monSub=null;
+function loadMon(){
+  renderMon();
+  if(monSub||!db)return;
+  monSub=MON_DOC().onSnapshot(s=>{if(s.exists){MON=s.data();renderMon();}},e=>console.warn('monitoring load',e));
 }
 
 // ── tabs ──
@@ -259,5 +356,5 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   $('v-form').classList.toggle('hidden',tab!=='form');$('v-hist').classList.toggle('hidden',tab!=='hist');$('v-mon').classList.toggle('hidden',tab!=='mon');
   $('foot').classList.toggle('hidden',tab!=='form');
   if(tab==='hist')loadHist();
-  if(tab==='mon')renderMon();
+  if(tab==='mon')loadMon();
 });

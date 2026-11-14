@@ -27,7 +27,7 @@ header a.back{color:#fff;text-decoration:none;font-size:22px;width:32px}
 header h1{font-size:17px;font-weight:800}
 header p{font-size:12px;opacity:.7}
 .tabs{max-width:560px;margin:12px auto 0;display:flex;gap:6px}
-.tab{flex:1;padding:9px;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.tab{flex:1;padding:9px 4px;white-space:nowrap;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-weight:700;font-size:12px;cursor:pointer}
 .tab.on{background:#fff;color:var(--primary)}
 .sec{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;margin:22px 4px 8px}
 .card{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:14px;border:1px solid var(--border)}
@@ -104,9 +104,9 @@ textarea{min-height:70px;resize:vertical}
     <div><h1>MDS Special Channel (Makassar)</h1><p>Gym &amp; Sport Center · Horeka</p></div>
   </div>
   <div class="tabs">
-    <button class="tab on" data-tab="form">Visit Baru</button>
-    <button class="tab" data-tab="hist">Riwayat</button>
-    <button class="tab" data-tab="mon">Monitoring</button>
+    <button class="tab on" data-tab="form">New Visit</button>
+    <button class="tab" data-tab="hist">History Visit</button>
+    <button class="tab" data-tab="mon">Monitoring Sales</button>
   </div>
 </header>
 
@@ -176,6 +176,12 @@ textarea{min-height:70px;resize:vertical}
 </div>
 
 <div class="wrap hidden" id="v-mon">
+  <div class="sec">Update Data Sales</div>
+  <div class="card">
+    <button class="btn ghost" id="upBtn" type="button">📤 Upload file sales (.xlsx)</button>
+    <input type="file" id="upFile" accept=".xlsx,.xlsm,.xls,.csv" class="hidden">
+    <div class="gps" id="upStatus"></div>
+  </div>
   <div class="sec" id="mPeriod">Monitoring</div>
   <div class="kpis" id="mKpi"></div>
   <div class="sec">Per Outlet</div>
