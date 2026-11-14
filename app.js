@@ -41,7 +41,7 @@ function groupsFor(channel){
 chips($('activity'),ACTIVITIES,'activity');
 chips($('channel'),CHANNELS,'channel');
 
-$('mds').value=store.get('sc_mds')||'';
+$('mds').value=store.get('sc_mds')||'Agustianto Kombong';
 const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);};
 $('vdate').value=today();
 
