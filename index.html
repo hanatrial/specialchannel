@@ -82,6 +82,18 @@ textarea{min-height:70px;resize:vertical}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--primary);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;z-index:20;max-width:90%}
 .toast.show{opacity:1}
 .empty{text-align:center;color:var(--t3);padding:30px;font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:var(--sh)}
+.kpi .v{font-size:17px;font-weight:800;color:var(--primary)}
+.kpi .k{font-size:11px;font-weight:700;color:var(--t3);margin-top:2px}
+.tbl{padding:6px 14px}
+.tr{display:flex;gap:10px;align-items:baseline;padding:10px 0;border-top:1px solid var(--border);font-size:13px}
+.tr:first-child{border-top:none}
+.tr .nm{flex:1;font-weight:600;line-height:1.3}
+.tr .nm small{display:block;font-size:11px;color:var(--t3);font-weight:700;margin-top:2px}
+.tr .q{width:52px;text-align:right;color:var(--t2);flex-shrink:0}
+.tr .r{width:92px;text-align:right;font-weight:800;flex-shrink:0}
+.note{font-size:11px;color:var(--t3);margin:16px 4px;line-height:1.5}
 .hidden{display:none!important}
 </style>
 </head>
@@ -94,6 +106,7 @@ textarea{min-height:70px;resize:vertical}
   <div class="tabs">
     <button class="tab on" data-tab="form">Visit Baru</button>
     <button class="tab" data-tab="hist">Riwayat</button>
+    <button class="tab" data-tab="mon">Monitoring</button>
   </div>
 </header>
 
@@ -162,12 +175,25 @@ textarea{min-height:70px;resize:vertical}
   <div style="margin-top:14px"><button class="btn ghost" id="csvBtn">⬇️ Export CSV</button></div>
 </div>
 
+<div class="wrap hidden" id="v-mon">
+  <div class="sec" id="mPeriod">Monitoring</div>
+  <div class="kpis" id="mKpi"></div>
+  <div class="sec">Per Outlet</div>
+  <div class="card tbl" id="mOutlets"></div>
+  <div class="sec">Per Item</div>
+  <div class="card tbl" id="mItems"></div>
+  <div class="sec" id="mTxCount">Transaksi</div>
+  <div class="hist" id="mTx"></div>
+  <p class="note" id="mNote"></p>
+</div>
+
 <div class="foot" id="foot"><div class="in"><button class="btn" id="saveBtn">Simpan Visit</button></div></div>
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="products.js"></script>
+<script src="monitoring-data.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -216,10 +216,48 @@ $('csvBtn').onclick=()=>{
   a.download=`special-channel-${new Date().toISOString().slice(0,10)}.csv`;a.click();
 };
 
+// ── monitoring (sales file: Sektor Market 60, list items only) ──
+const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
+const rpShort=n=>n>=1e6?'Rp'+(n/1e6).toLocaleString('id-ID',{maximumFractionDigits:2})+' jt':rp(n);
+function sumBy(rows,key){
+  const m=new Map();
+  for(const r of rows){const k=key(r);const v=m.get(k)||{net:0,qty:0,n:0,rows:[]};v.net+=r.net;v.qty+=r.qty;v.n++;v.rows.push(r);m.set(k,v);}
+  return [...m].sort((a,b)=>b[1].net-a[1].net);
+}
+function renderMon(){
+  const M=window.MONITORING;
+  if(!M||!M.rows.length){$('mTx').innerHTML='<div class="empty">Belum ada data</div>';return;}
+  const fmtD=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+  $('mPeriod').textContent=`Sektor 60 · ${fmtD(M.from)} – ${fmtD(M.to)}`;
+  const rows=M.rows;
+  const net=rows.reduce((s,r)=>s+r.net,0);
+  const outlets=new Set(rows.map(r=>r.outlet)).size;
+  $('mKpi').innerHTML=[[rpShort(net),'Netto'],[outlets,'Outlet'],[new Set(rows.map(r=>r.code)).size,'Item terjual']]
+    .map(([v,k])=>`<div class="kpi"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+  const cat=code=>(window.ITEMS.find(p=>p.code===code)||{}).cat||'';
+  $('mItems').innerHTML=`<div class="tr" style="font-size:11px;font-weight:800;color:var(--t3)"><span class="nm">ITEM</span><span class="q">PCS</span><span class="r">NETTO</span></div>`+
+    sumBy(rows,r=>r.code).map(([code,v])=>`<div class="tr"><span class="nm">${esc(v.rows[0].item)}<small>${esc(cat(code))}</small></span><span class="q">${v.qty.toLocaleString('id-ID')}</span><span class="r">${rp(v.net)}</span></div>`).join('');
+  const dShort=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+  $('mOutlets').innerHTML=`<div class="tr" style="font-size:11px;font-weight:800;color:var(--t3)"><span class="nm">OUTLET</span><span class="q">TRX</span><span class="r">NOMINAL</span></div>`+
+    sumBy(rows,r=>r.outlet).map(([o,v])=>{const inv=new Set(v.rows.map(r=>r.inv)).size;const dates=[...new Set(v.rows.map(r=>r.d))].sort().map(dShort).join(', ');
+    return `<div class="tr"><span class="nm">${esc(o)}<small>${dates}</small></span><span class="q">${inv}</span><span class="r">${rp(v.net)}</span></div>`}).join('');
+  // one transaction = one invoice
+  const tx=sumBy(rows,r=>r.inv).map(([inv,v])=>({inv,...v,outlet:v.rows[0].outlet,type:v.rows[0].type,d:v.rows[0].d})).sort((a,b)=>b.d.localeCompare(a.d)||b.net-a.net);
+  $('mTxCount').textContent=`Transaksi (${tx.length})`;
+  $('mTx').innerHTML=tx.map(t=>`<div class="card h-item">
+    <div style="display:flex;justify-content:space-between;gap:10px"><div class="t" style="font-size:15px">${esc(t.outlet)}</div><div class="t" style="font-size:15px;white-space:nowrap">${rp(t.net)}</div></div>
+    <div class="m">${fmtD(t.d)} · ${t.n} item</div>
+    ${t.rows.map(r=>`<div class="m">• ${esc(r.item)} — ${r.qty} pcs · ${rp(r.net)}</div>`).join('')}
+  </div>`).join('');
+  $('mNote').textContent=`Sumber: ${M.source}. Hanya Sektor Market 60 (SPEC. OUTLET RETAIL) dan item yang ada di list item (dicocokkan lewat kode barang). Netto = setelah diskon.`;
+}
+
 // ── tabs ──
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
-  const hist=t.dataset.tab==='hist';
-  $('v-form').classList.toggle('hidden',hist);$('v-hist').classList.toggle('hidden',!hist);$('foot').classList.toggle('hidden',hist);
-  if(hist)loadHist();
+  const tab=t.dataset.tab;
+  $('v-form').classList.toggle('hidden',tab!=='form');$('v-hist').classList.toggle('hidden',tab!=='hist');$('v-mon').classList.toggle('hidden',tab!=='mon');
+  $('foot').classList.toggle('hidden',tab!=='form');
+  if(tab==='hist')loadHist();
+  if(tab==='mon')renderMon();
 });
