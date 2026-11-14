@@ -127,7 +127,7 @@ function validate(d){
 function waText(d){
   const avail=d.items.filter(i=>i.available),ord=d.items.filter(i=>i.order>0);
   const lines=[
-    '*VISIT SPECIAL CHANNEL (MAKASSAR)*',
+    '*MDS SPECIAL CHANNEL (MAKASSAR)*',
     `📅 Tanggal Visit: ${new Date(d.date+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`,
     `👤 MDS: ${d.mds}`,
     `🎯 Aktivitas: ${label(ACTIVITIES,d.activity)}`,
