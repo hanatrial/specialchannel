@@ -5,7 +5,7 @@ let db=null;
 try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){console.warn('Firebase init failed',e);}
 
 const ACTIVITIES=[
-  {k:'so',label:'Taking Sales Order ke Distributor',icon:'🧾'},
+  {k:'so',label:'Taking Sales Order to Distributor',icon:'🧾'},
   {k:'visit',label:'Visit',icon:'🚶'},
   {k:'sample',label:'Sample Merchant',icon:'🎁'},
 ];
@@ -117,7 +117,7 @@ function collect(){
 function validate(d){
   if(!d.mds)return 'Isi Nama MDS';
   if(!d.date)return 'Isi Tanggal Visit';
-  if(!d.activity)return 'Pilih Aktivitas';
+  if(!d.activity)return 'Choose an Activity';
   if(!d.channel)return 'Pilih Channel';
   if(!d.outlet)return 'Isi Nama Outlet';
   if(!d.gps)return 'Check-in GPS dulu';
@@ -130,7 +130,7 @@ function waText(d){
     '*MDS SPECIAL CHANNEL (MAKASSAR)*',
     `📅 Tanggal Visit: ${new Date(d.date+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`,
     `👤 MDS: ${d.mds}`,
-    `🎯 Aktivitas: ${label(ACTIVITIES,d.activity)}`,
+    `🎯 Activity: ${label(ACTIVITIES,d.activity)}`,
     `🏷️ Channel: ${label(CHANNELS,d.channel)}`,
     `🏪 Outlet: ${d.outlet}`,
     d.address?`📍 ${d.address}`:'',
@@ -203,7 +203,7 @@ function loadHist(){
 }
 $('csvBtn').onclick=()=>{
   const r=rows();if(!r.length){toast('Tidak ada data');return;}
-  const head=['Tanggal','MDS','Aktivitas','Channel','Outlet','Alamat','Lat','Lng','PIC','Jabatan PIC','HP PIC','Produk Tersedia','Order','Total Order','Catatan'];
+  const head=['Tanggal','MDS','Activity','Channel','Outlet','Alamat','Lat','Lng','PIC','Jabatan PIC','HP PIC','Produk Tersedia','Order','Total Order','Catatan'];
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const lines=[head.map(q).join(',')].concat(r.map(h=>[h.date,h.mds,label(ACTIVITIES,h.activity),label(CHANNELS,h.channel),h.outlet,h.address,h.gps?.lat,h.gps?.lng,h.pic,h.picRole,h.picPhone,
     (h.items||[]).filter(i=>i.available).map(i=>i.name).join('; '),(h.items||[]).filter(i=>i.order>0).map(i=>i.name+' x'+i.order).join('; '),(h.items||[]).reduce((s,i)=>s+(i.order||0),0),h.notes].map(q).join(',')));
