@@ -26,8 +26,9 @@ header .row{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12
 header a.back{color:#fff;text-decoration:none;font-size:22px;width:32px}
 header h1{font-size:17px;font-weight:800}
 header p{font-size:12px;opacity:.7}
-.tabs{max-width:560px;margin:12px auto 0;display:flex;gap:6px}
-.tab{flex:1;padding:9px 4px;white-space:nowrap;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-weight:700;font-size:12px;cursor:pointer}
+.tabs{max-width:560px;margin:12px auto 0;display:flex;gap:4px}
+@media(max-width:400px){.tab{font-size:10.5px!important;letter-spacing:-.01em}}
+.tab{flex:1;padding:9px 2px;white-space:nowrap;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-weight:700;font-size:11px;cursor:pointer}
 .tab.on{background:#fff;color:var(--primary)}
 .sec{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;margin:22px 4px 8px}
 .card{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:14px;border:1px solid var(--border)}
@@ -94,6 +95,9 @@ textarea{min-height:70px;resize:vertical}
 .tr .q{width:52px;text-align:right;color:var(--t2);flex-shrink:0}
 .tr .r{width:92px;text-align:right;font-weight:800;flex-shrink:0}
 .note{font-size:11px;color:var(--t3);margin:16px 4px;line-height:1.5}
+.o-acts{display:flex;gap:8px;margin-top:10px}
+.o-acts a,.o-acts button{flex:1;padding:10px;font-size:13px;text-decoration:none}
+.o-addr{color:var(--accent);text-decoration:none;font-weight:600}
 .hidden{display:none!important}
 </style>
 </head>
@@ -106,6 +110,7 @@ textarea{min-height:70px;resize:vertical}
   <div class="tabs">
     <button class="tab on" data-tab="form">New Visit</button>
     <button class="tab" data-tab="hist">History Visit</button>
+    <button class="tab" data-tab="list">List Outlet</button>
     <button class="tab" data-tab="mon">Monitoring Sales</button>
   </div>
 </header>
@@ -175,6 +180,15 @@ textarea{min-height:70px;resize:vertical}
   <div style="margin-top:14px"><button class="btn ghost" id="csvBtn">⬇️ Export CSV</button></div>
 </div>
 
+<div class="wrap hidden" id="v-list">
+  <div class="sec">Cari Outlet</div>
+  <input type="text" class="search" id="oq" placeholder="🔍 Nama outlet / jalan…">
+  <div class="filters" id="oCat"></div>
+  <div class="filters" id="oKec" style="margin-top:6px"></div>
+  <div class="sec" id="oCount">Outlet</div>
+  <div class="hist" id="oList"></div>
+</div>
+
 <div class="wrap hidden" id="v-mon">
   <div class="sec">Update Data Sales</div>
   <div class="card">
@@ -199,7 +213,8 @@ textarea{min-height:70px;resize:vertical}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="products.js?v=5"></script>
-<script src="monitoring-data.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="monitoring-data.js?v=6"></script>
+<script src="outlets.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

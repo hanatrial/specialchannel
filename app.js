@@ -349,12 +349,45 @@ function loadMon(){
   monSub=MON_DOC().onSnapshot(s=>{if(s.exists){MON=s.data();renderMon();}},e=>console.warn('monitoring load',e));
 }
 
+// ── list outlet (guidebook) ──
+const OUTLETS=window.OUTLETS||[];
+const O={cat:'all',kec:'all'};
+const mapUrl=o=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(/makassar/i.test(o.n)?o.n:o.n+' Makassar');
+const catGroup=c=>/Padel/.test(c)?'Padel':/Mahjong/.test(c)?'Mahjong':/Board/.test(c)?'Board Game':/Steak/.test(c)?'Steak House':/Gym/.test(c)?'Gym':/Sport/.test(c)?'Sport Center':/Cafe|Warkop/.test(c)?'Cafe':'Resto';
+function oChips(el,vals,key){
+  el.innerHTML=['all',...vals].map(v=>`<button class="chip${O[key]===v?' on':''}" data-v="${esc(v)}">${v==='all'?'Semua':esc(v)}</button>`).join('');
+  el.onclick=e=>{const b=e.target.closest('.chip');if(!b)return;O[key]=b.dataset.v;renderOutlets();};
+}
+function renderOutlets(){
+  const cnt=a=>[...new Set(a)].sort();
+  oChips($('oCat'),['Cafe','Resto','Steak House','Padel','Gym','Sport Center','Mahjong','Board Game'].filter(g=>OUTLETS.some(o=>catGroup(o.cat)===g)),'cat');
+  oChips($('oKec'),cnt(OUTLETS.map(o=>o.kec).filter(Boolean)),'kec');
+  const q=$('oq').value.trim().toLowerCase();
+  const list=OUTLETS.filter(o=>(O.cat==='all'||catGroup(o.cat)===O.cat)&&(O.kec==='all'||o.kec===O.kec)&&(!q||(o.n+' '+o.addr).toLowerCase().includes(q)))
+    .sort((a,b)=>(+b.rv||0)-(+a.rv||0));
+  $('oCount').textContent=`${list.length} outlet`;
+  $('oList').innerHTML=list.length?list.map((o,i)=>`<div class="card h-item">
+    <div class="t">${esc(o.n)}</div>
+    <div class="m"><span class="tag">${esc(o.cat)}</span>${o.kec?`<span class="tag">${esc(o.kec)}</span>`:''}${o.rt?` ⭐ ${esc(o.rt)} (${(+o.rv).toLocaleString('id-ID')} ulasan)`:''}</div>
+    ${o.addr?`<div class="m"><a class="o-addr" href="${mapUrl(o)}" target="_blank" rel="noopener">📍 ${esc(o.addr)}</a></div>`:''}
+    ${o.first?`<div class="m">🕒 Ulasan pertama: ${esc(o.first)}</div>`:''}
+    <div class="o-acts"><a class="btn ghost" href="${mapUrl(o)}" target="_blank" rel="noopener">🗺️ Buka Maps</a><button class="btn" data-visit="${OUTLETS.indexOf(o)}">✍️ Visit</button></div>
+  </div>`).join(''):'<div class="empty">Tidak ada outlet</div>';
+}
+$('oq').oninput=renderOutlets;
+$('oList').onclick=e=>{const b=e.target.closest('[data-visit]');if(!b)return;const o=OUTLETS[+b.dataset.visit];
+  $('outlet').value=o.n;$('address').value=o.addr||'';
+  const ch=[...$('channel').children].find(c=>c.dataset.k===o.ch);if(ch&&S.channel!==o.ch)ch.click();
+  document.querySelector('.tab[data-tab="form"]').click();window.scrollTo(0,0);toast('Outlet terisi, lanjut isi form visit');};
+
 // ── tabs ──
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
   const tab=t.dataset.tab;
-  $('v-form').classList.toggle('hidden',tab!=='form');$('v-hist').classList.toggle('hidden',tab!=='hist');$('v-mon').classList.toggle('hidden',tab!=='mon');
+  ['form','hist','list','mon'].forEach(v=>$('v-'+v).classList.toggle('hidden',tab!==v));
   $('foot').classList.toggle('hidden',tab!=='form');
   if(tab==='hist')loadHist();
+  if(tab==='list')renderOutlets();
+  window.scrollTo(0,0);
   if(tab==='mon')loadMon();
 });
