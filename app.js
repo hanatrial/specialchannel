@@ -366,13 +366,12 @@ function renderOutlets(){
   const list=OUTLETS.filter(o=>(O.cat==='all'||catGroup(o.cat)===O.cat)&&(O.kec==='all'||o.kec===O.kec)&&(!q||(o.n+' '+o.addr).toLowerCase().includes(q)))
     .sort((a,b)=>(+b.rv||0)-(+a.rv||0));
   $('oCount').textContent=`${list.length} outlet`;
-  $('oList').innerHTML=list.length?list.map((o,i)=>`<div class="card h-item">
-    <div class="t">${esc(o.n)}</div>
-    <div class="m"><span class="tag">${esc(o.cat)}</span>${o.kec?`<span class="tag">${esc(o.kec)}</span>`:''}${o.rt?` ⭐ ${esc(o.rt)} (${(+o.rv).toLocaleString('id-ID')} ulasan)`:''}</div>
-    ${o.addr?`<div class="m"><a class="o-addr" href="${mapUrl(o)}" target="_blank" rel="noopener">📍 ${esc(o.addr)}</a></div>`:''}
-    ${o.first?`<div class="m">🕒 Ulasan pertama: ${esc(o.first)}</div>`:''}
-    <div class="o-acts"><a class="btn ghost" href="${mapUrl(o)}" target="_blank" rel="noopener">🗺️ Buka Maps</a><button class="btn" data-visit="${OUTLETS.indexOf(o)}">✍️ Visit</button></div>
-  </div>`).join(''):'<div class="empty">Tidak ada outlet</div>';
+  $('oList').innerHTML=list.length?`<div class="card o-tbl"><div class="o-row o-head"><span class="o-nm">Outlet</span><span class="o-rt">⭐</span><span class="o-b">Maps</span><span class="o-b">Visit</span></div>`+list.map(o=>`<div class="o-row">
+    <span class="o-nm"><b>${esc(o.n)}</b><small>${esc(o.cat)}${o.kec?' · '+esc(o.kec):''}</small></span>
+    <span class="o-rt">${o.rt?esc(o.rt)+'<small>'+(+o.rv).toLocaleString('id-ID')+'</small>':'–'}</span>
+    <a class="o-b" href="${mapUrl(o)}" target="_blank" rel="noopener" title="Buka Maps">🗺️</a>
+    <button class="o-b dark" data-visit="${OUTLETS.indexOf(o)}" title="Visit">✍️</button>
+  </div>`).join('')+'</div>':'<div class="empty">Tidak ada outlet</div>';
 }
 $('oq').oninput=renderOutlets;
 $('oList').onclick=e=>{const b=e.target.closest('[data-visit]');if(!b)return;const o=OUTLETS[+b.dataset.visit];

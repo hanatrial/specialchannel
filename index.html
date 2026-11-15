@@ -95,9 +95,18 @@ textarea{min-height:70px;resize:vertical}
 .tr .q{width:52px;text-align:right;color:var(--t2);flex-shrink:0}
 .tr .r{width:92px;text-align:right;font-weight:800;flex-shrink:0}
 .note{font-size:11px;color:var(--t3);margin:16px 4px;line-height:1.5}
-.o-acts{display:flex;gap:8px;margin-top:10px}
-.o-acts a,.o-acts button{flex:1;padding:10px;font-size:13px;text-decoration:none}
-.o-addr{color:var(--accent);text-decoration:none;font-weight:600}
+.o-tbl{padding:4px 10px}
+.o-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border)}
+.o-row:first-child{border-top:none}
+.o-head{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0}
+.o-nm{flex:1;min-width:0;line-height:1.25}
+.o-nm b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o-nm small{display:block;font-size:10.5px;color:var(--t3);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o-rt{width:40px;text-align:center;font-size:12px;font-weight:800;line-height:1.1;flex-shrink:0}
+.o-rt small{display:block;font-size:9.5px;color:var(--t3);font-weight:600}
+.o-b{width:40px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:10px;border:none;background:var(--bg2);font-size:17px;text-decoration:none;cursor:pointer}
+.o-b.dark{background:var(--primary)}
+.o-head .o-b{background:none;height:auto;font-size:10px}
 .hidden{display:none!important}
 </style>
 </head>
@@ -215,6 +224,6 @@ textarea{min-height:70px;resize:vertical}
 <script src="products.js?v=5"></script>
 <script src="monitoring-data.js?v=6"></script>
 <script src="outlets.js?v=11"></script>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
