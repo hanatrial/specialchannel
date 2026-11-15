@@ -353,14 +353,14 @@ function loadMon(){
 const OUTLETS=window.OUTLETS||[];
 const O={cat:'all',kec:'all'};
 const mapUrl=o=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(/makassar/i.test(o.n)?o.n:o.n+' Makassar');
-const catGroup=c=>/Padel/.test(c)?'Padel':/Mahjong/.test(c)?'Mahjong':/Board/.test(c)?'Board Game':/Steak/.test(c)?'Steak House':/Gym/.test(c)?'Gym':/Sport/.test(c)?'Sport Center':/Cafe|Warkop/.test(c)?'Cafe':'Resto';
+const catGroup=c=>/Hotel/.test(c)?'Hotel':/Padel/.test(c)?'Padel':/Mahjong/.test(c)?'Mahjong':/Board/.test(c)?'Board Game':/Steak/.test(c)?'Steak House':/Gym/.test(c)?'Gym':/Sport/.test(c)?'Sport Center':/Cafe|Warkop/.test(c)?'Cafe':'Resto';
 function oChips(el,vals,key){
   el.innerHTML=['all',...vals].map(v=>`<button class="chip${O[key]===v?' on':''}" data-v="${esc(v)}">${v==='all'?'Semua':esc(v)}</button>`).join('');
   el.onclick=e=>{const b=e.target.closest('.chip');if(!b)return;O[key]=b.dataset.v;renderOutlets();};
 }
 function renderOutlets(){
   const cnt=a=>[...new Set(a)].sort();
-  oChips($('oCat'),['Cafe','Resto','Steak House','Padel','Gym','Sport Center','Mahjong','Board Game'].filter(g=>OUTLETS.some(o=>catGroup(o.cat)===g)),'cat');
+  oChips($('oCat'),['Hotel','Cafe','Resto','Steak House','Padel','Gym','Sport Center','Mahjong','Board Game'].filter(g=>OUTLETS.some(o=>catGroup(o.cat)===g)),'cat');
   oChips($('oKec'),cnt(OUTLETS.map(o=>o.kec).filter(Boolean)),'kec');
   const q=$('oq').value.trim().toLowerCase();
   const list=OUTLETS.filter(o=>(O.cat==='all'||catGroup(o.cat)===O.cat)&&(O.kec==='all'||o.kec===O.kec)&&(!q||(o.n+' '+o.addr).toLowerCase().includes(q)))
