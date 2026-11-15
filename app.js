@@ -362,18 +362,33 @@ function renderOutlets(){
   const cnt=a=>[...new Set(a)].sort();
   oChips($('oCat'),['Hotel','Cafe','Resto','Steak House','Padel','Gym','Sport Center','Mahjong','Board Game'].filter(g=>OUTLETS.some(o=>catGroup(o.cat)===g)),'cat');
   oChips($('oKec'),cnt(OUTLETS.map(o=>o.kec).filter(Boolean)),'kec');
+  const SORTS=[['rv','💬 Ulasan terbanyak'],['rt','⭐ Rating tertinggi'],['near','📍 Terdekat']];
+  $('oSort').innerHTML=SORTS.map(([k,l])=>`<button class="chip${O.sort===k?' on':''}" data-s="${k}">${l}</button>`).join('');
   const q=$('oq').value.trim().toLowerCase();
-  const list=OUTLETS.filter(o=>(O.cat==='all'||catGroup(o.cat)===O.cat)&&(O.kec==='all'||o.kec===O.kec)&&(!q||(o.n+' '+o.addr).toLowerCase().includes(q)))
-    .sort((a,b)=>(+b.rv||0)-(+a.rv||0));
-  $('oCount').textContent=`${list.length} outlet`;
+  const list=OUTLETS.filter(o=>(O.cat==='all'||catGroup(o.cat)===O.cat)&&(O.kec==='all'||o.kec===O.kec)&&(!q||(o.n+' '+o.addr).toLowerCase().includes(q)));
+  const dist=o=>(O.me&&o.lat)?distKm(O.me,o):Infinity;
+  if(O.sort==='rt')list.sort((a,b)=>(+b.rt||0)-(+a.rt||0)||(+b.rv||0)-(+a.rv||0));
+  else if(O.sort==='near'&&O.me)list.sort((a,b)=>dist(a)-dist(b));
+  else list.sort((a,b)=>(+b.rv||0)-(+a.rv||0));
+  $('oCount').textContent=`${list.length} outlet`+(O.sort==='near'?(O.me?' · urut dari lokasi kamu':' · mencari lokasi…'):'');
   $('oList').innerHTML=list.length?`<div class="card o-tbl"><div class="o-row o-head"><span class="o-nm">Outlet</span><span class="o-rt">⭐</span><span class="o-b">Maps</span><span class="o-b">Visit</span></div>`+list.map(o=>`<div class="o-row">
-    <span class="o-nm"><b>${esc(o.n)}</b><small>${esc(o.cat)}${o.kec?' · '+esc(o.kec):''}</small></span>
+    <span class="o-nm"><b>${esc(o.n)}</b><small>${O.sort==='near'&&dist(o)<Infinity?'<span class="o-km">'+fmtKm(dist(o))+'</span> · ':''}${esc(o.cat)}${o.kec?' · '+esc(o.kec):''}</small></span>
     <span class="o-rt">${o.rt?esc(o.rt)+'<small>'+(+o.rv).toLocaleString('id-ID')+'</small>':'–'}</span>
     <a class="o-b" href="${mapUrl(o)}" target="_blank" rel="noopener" title="Buka Maps">🗺️</a>
     <button class="o-b dark" data-visit="${OUTLETS.indexOf(o)}" title="Visit">✍️</button>
   </div>`).join('')+'</div>':'<div class="empty">Tidak ada outlet</div>';
 }
 $('oq').oninput=renderOutlets;
+O.sort='rv';
+function distKm(a,b){const R=6371,r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+const fmtKm=d=>d<1?Math.round(d*1000)+' m':d.toFixed(1).replace('.',',')+' km';
+$('oSort').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;O.sort=b.dataset.s;
+  if(O.sort==='near'){
+    if(!navigator.geolocation){toast('GPS tidak tersedia di HP ini');return;}
+    navigator.geolocation.getCurrentPosition(p=>{O.me={lat:p.coords.latitude,lng:p.coords.longitude};renderOutlets();},
+      ()=>{toast('Izinkan akses lokasi untuk urutan terdekat');O.sort='rv';renderOutlets();},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+  }
+  renderOutlets();};
 $('oList').onclick=e=>{const b=e.target.closest('[data-visit]');if(!b)return;const o=OUTLETS[+b.dataset.visit];
   $('outlet').value=o.n;$('address').value=o.addr||'';
   const ch=[...$('channel').children].find(c=>c.dataset.k===o.ch);if(ch&&S.channel!==o.ch)ch.click();
