@@ -8,6 +8,7 @@ const ACTIVITIES=[
   {k:'so',label:'Taking Sales Order to Distributor',icon:'🧾'},
   {k:'visit',label:'Visit',icon:'🚶'},
   {k:'sample',label:'Sample Merchant',icon:'🎁'},
+  {k:'ds',label:'Direct Selling',icon:'🛒'},
 ];
 const CHANNELS=[
   {k:'gym',label:'Gym & Sport Center',icon:'🏋️'},
