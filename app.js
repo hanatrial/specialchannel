@@ -18,6 +18,7 @@ const label=(list,k)=>(list.find(x=>x.k===k)||{}).label||k;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
 
@@ -54,19 +55,44 @@ function renderProducts(){
   $('q').classList.remove('hidden');
   const list=window.ITEMS.filter(p=>(p.type==='all'||p.type===S.channel)&&(!q||(p.name+' '+p.cat).toLowerCase().includes(q)));
   $('products').innerHTML=list.length?`<div class="it ith"><span class="nm">Produk</span><span class="c">Ada</span><span class="o">Order</span></div>`+
-    list.map(p=>{const it=p.name,v=S.items[it]||{};return `<div class="it">
+    list.map(p=>{const it=p.name,v=S.items[it]||{};return `<div class="it-wrap"><div class="it">
       <span class="nm">${esc(it)}<span class="cat">${esc(p.cat)}</span></span>
       <span class="c"><input type="checkbox" data-it="${esc(it)}" ${v.av?'checked':''}></span>
       <input type="number" class="o" data-ord="${esc(it)}" inputmode="numeric" min="0" placeholder="0" value="${v.ord||''}">
-    </div>`}).join(''):'<div class="empty">Produk tidak ditemukan</div>';
+    </div><div class="it-price${+v.ord>0?'':' hidden'}">
+      <span>Harga / pcs</span><input type="number" class="pr" data-pr="${esc(it)}" inputmode="numeric" min="0" placeholder="Rp" value="${v.price||''}">
+      <b class="sub" data-sub="${esc(it)}">${+v.ord>0&&+v.price>0?rp(v.ord*v.price):''}</b>
+    </div></div>`}).join(''):'<div class="empty">Produk tidak ditemukan</div>';
+  renderOrderTotal();
 }
 $('q').oninput=renderProducts;
 function setItem(it,patch){
   const v={...(S.items[it]||{}),...patch};
   if(!v.av&&!v.ord)delete S.items[it];else S.items[it]=v;
 }
+const lastPrice=it=>{try{return (JSON.parse(store.get('sc_prices')||'{}'))[it]||''}catch(e){return ''}};
+const savePrice=(it,p)=>{try{const m=JSON.parse(store.get('sc_prices')||'{}');m[it]=p;store.set('sc_prices',JSON.stringify(m));}catch(e){}};
+function renderOrderTotal(){
+  const ord=Object.entries(S.items).filter(([,v])=>+v.ord>0);
+  const qty=ord.reduce((s,[,v])=>s+ +v.ord,0),val=ord.reduce((s,[,v])=>s+(+v.ord)*(+v.price||0),0);
+  $('ordTotal').classList.toggle('hidden',!qty);
+  $('ordTotal').innerHTML=`Total order: <b>${qty} pcs</b> · <b>${rp(val)}</b>${ord.some(([,v])=>!(+v.price>0))?' <span class="warn">· ada harga belum diisi</span>':''}`;
+}
+function updRow(it){
+  const v=S.items[it]||{},w=document.querySelector(`[data-pr="${CSS.escape(it)}"]`)?.closest('.it-price');if(!w)return;
+  w.classList.toggle('hidden',!(+v.ord>0));
+  w.querySelector('.sub').textContent=+v.ord>0&&+v.price>0?rp(v.ord*v.price):'';
+  renderOrderTotal();
+}
 $('products').addEventListener('change',e=>{const cb=e.target.closest('input[data-it]');if(cb)setItem(cb.dataset.it,{av:cb.checked});});
-$('products').addEventListener('input',e=>{const o=e.target.closest('input[data-ord]');if(o)setItem(o.dataset.ord,{ord:o.value});});
+$('products').addEventListener('input',e=>{
+  const o=e.target.closest('input[data-ord]');
+  if(o){const it=o.dataset.ord,v=S.items[it]||{};const patch={ord:o.value};
+    if(+o.value>0&&!v.price){const lp=lastPrice(it);if(lp){patch.price=lp;const pi=document.querySelector(`[data-pr="${CSS.escape(it)}"]`);if(pi)pi.value=lp;}}
+    setItem(it,patch);updRow(it);return;}
+  const p=e.target.closest('input[data-pr]');
+  if(p){const it=p.dataset.pr;setItem(it,{price:p.value});if(+p.value>0)savePrice(it,p.value);updRow(it);}
+});
 renderProducts();
 
 // ── GPS ──
@@ -109,7 +135,8 @@ function collect(){
     outlet:$('outlet').value.trim(),address:$('address').value.trim(),gps:S.gps,
     pic:$('pic').value.trim(),picRole:$('picRole').value.trim(),picPhone:$('picPhone').value.trim(),
     items:window.ITEMS.filter(p=>S.items[p.name]).map(p=>{const v=S.items[p.name];
-      return {name:p.name,code:p.code,cat:p.cat,available:!!v.av,order:v.ord?Number(v.ord):0};}),
+      const order=v.ord?Number(v.ord):0,price=order&&v.price?Number(v.price):0;
+      return {name:p.name,code:p.code,cat:p.cat,available:!!v.av,order,price,subtotal:order*price};}),
     photoDisplay:S.photos.display,photoComp:S.photos.comp,
     notes:$('notes').value.trim(),
     date:$('vdate').value,
@@ -146,8 +173,9 @@ function waText(d){
     `*✅ Produk tersedia (${avail.length}):*`,
     ...(avail.length?avail.map(i=>`• ${i.name}`):['-']),
     '',
-    `*📦 Order (${ord.reduce((s,i)=>s+i.order,0)}):*`,
-    ...(ord.length?ord.map(i=>`• ${i.name} — ${i.order}`):['-']),
+    `*📦 Order (${ord.reduce((s,i)=>s+i.order,0)} pcs):*`,
+    ...(ord.length?ord.map(i=>`• ${i.name} — ${i.order} x ${i.price?rp(i.price):'(harga ?)'}${i.price?' = '+rp(i.subtotal):''}`):['-']),
+    ...(ord.length?[`*💰 Total: ${rp(ord.reduce((s,i)=>s+(i.subtotal||0),0))}*`]:[]),
     '',
     d.notes?`📝 ${d.notes}`:'',
   ];
@@ -196,7 +224,7 @@ function renderHist(){
   $('hList').innerHTML=r.length?r.map(h=>`<div class="card h-item">
     <div class="t">${esc(h.outlet)}</div>
     <div class="m"><span class="tag">${esc(label(CHANNELS,h.channel))}</span><span class="tag">${esc(label(ACTIVITIES,h.activity))}</span></div>
-    <div class="m">${esc(h.date)} · ${esc(h.mds)} · ${(h.items||[]).filter(i=>i.available).length} produk ada · order ${(h.items||[]).reduce((s,i)=>s+(i.order||0),0)}</div>
+    <div class="m">${esc(h.date)} · ${esc(h.mds)} · ${(h.items||[]).filter(i=>i.available).length} produk ada · order ${(h.items||[]).reduce((s,i)=>s+(i.order||0),0)}${(h.items||[]).some(i=>i.subtotal)?' · '+rp((h.items||[]).reduce((s,i)=>s+(i.subtotal||0),0)):''}</div>
     ${h.notes?`<div class="m">📝 ${esc(h.notes)}</div>`:''}
   </div>`).join(''):'<div class="empty">Belum ada visit</div>';
 }
@@ -209,16 +237,15 @@ function loadHist(){
 }
 $('csvBtn').onclick=()=>{
   const r=rows();if(!r.length){toast('Tidak ada data');return;}
-  const head=['Tanggal','MDS','Activity','Channel','Outlet','Alamat','Lat','Lng','PIC','Jabatan PIC','HP PIC','Produk Tersedia','Order','Total Order','Catatan'];
+  const head=['Tanggal','MDS','Activity','Channel','Outlet','Alamat','Lat','Lng','PIC','Jabatan PIC','HP PIC','Produk Tersedia','Order','Total Order','Nilai Order (Rp)','Catatan'];
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const lines=[head.map(q).join(',')].concat(r.map(h=>[h.date,h.mds,label(ACTIVITIES,h.activity),label(CHANNELS,h.channel),h.outlet,h.address,h.gps?.lat,h.gps?.lng,h.pic,h.picRole,h.picPhone,
-    (h.items||[]).filter(i=>i.available).map(i=>i.name).join('; '),(h.items||[]).filter(i=>i.order>0).map(i=>i.name+' x'+i.order).join('; '),(h.items||[]).reduce((s,i)=>s+(i.order||0),0),h.notes].map(q).join(',')));
+    (h.items||[]).filter(i=>i.available).map(i=>i.name).join('; '),(h.items||[]).filter(i=>i.order>0).map(i=>i.name+' x'+i.order+(i.price?' @'+i.price:'')).join('; '),(h.items||[]).reduce((s,i)=>s+(i.order||0),0),(h.items||[]).reduce((s,i)=>s+(i.subtotal||0),0),h.notes].map(q).join(',')));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+lines.join('\n')],{type:'text/csv'}));
   a.download=`special-channel-${new Date().toISOString().slice(0,10)}.csv`;a.click();
 };
 
 // ── monitoring (sales file: Sektor Market 60, list items only) ──
-const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const rpShort=n=>n>=1e6?'Rp'+(n/1e6).toLocaleString('id-ID',{maximumFractionDigits:2})+' jt':rp(n);
 function sumBy(rows,key){
   const m=new Map();
